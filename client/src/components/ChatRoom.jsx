@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef, useLayoutEffect } from "react";
+import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { io } from "socket.io-client"; // Import socket.io client
 
-const socket = io("http://192.168.1.109:5000"); // Connect to backend
-
 export default function ChatRoom() {
+  const socket = io("http://14.201.214.251:5000"); // Connect to backend
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [id, setId] = useState(null); // State to store the ID of the connected user

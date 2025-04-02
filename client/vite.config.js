@@ -7,6 +7,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     host: '0.0.0.0',  // Bind to all available network interfaces
-    port: 3000,        // (optional) specify the port, change if needed
+    port: 3000,     // (optional) specify the port, change if needed
+    https: false, // (optional) enable HTTPS, change if needed
+    open: true, // (optional) open the browser on server start
   },
 })

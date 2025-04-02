@@ -8,7 +8,8 @@ export default class ChatServer {
     constructor() {
         this.clients = [];
         this.messageHistory = []; 
-        this.http_server = http.createServer(); // Create an HTTP server (if you don’t already have one)
+        this.app = express(); // Create an Express app
+        this.http_server = http.createServer(this.app); // Create an HTTP server (if you don’t already have one)
         this.io = new SocketServer(this.http_server, {
             cors: {
             origin: "*", //["http://localhost:5000"], // Don't want other domains to run scripts on this server
@@ -21,6 +22,21 @@ export default class ChatServer {
     start(port) {
         this.http_server.listen(port, () => this.debug(`Server running on http://localhost:${port}`));
         this.handleClient(); // Call the function to handle client connections
+
+        // Checks for duplicate users
+        this.app.post('/api/check-username', async (req, res) => {
+            const { username } = req.body;
+          
+            try {
+              const user = await User.findOne({ username }); // Query your database for the username
+              if (user) {
+                return res.status(400).json({ message: 'Username already taken' });
+              }
+              res.status(200).json({ message: 'Username is available' });
+            } catch (err) {
+              res.status(500).json({ message: 'Server error' });
+            }
+          });
     }
 
     handleClient() {
