@@ -1,15 +1,18 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import ChatRoom from './components/chatRoom'
+import { useState } from 'react';
+import reactLogo from './assets/react.svg';
+import viteLogo from '/vite.svg';
+import './App.css';
+import LoginPage from './components/LoginPage';
+import HomePage from './components/HomePage';
+import ChatRoom from './components/ChatRoom';
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>
-      <ChatRoom/>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/chat" element={<ChatRoom />} />
     </>
   )
 }
