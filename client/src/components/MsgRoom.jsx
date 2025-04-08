@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { io } from "socket.io-client";
-import { API_URL } from "../main"; 
+import { API_URL } from "./constants.js";
 
 
 export default function MsgRoom() {
@@ -8,7 +8,7 @@ export default function MsgRoom() {
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [id, setId] = useState(null); // State to store the ID of the connected user
+  const [username, setUsername] = useState(null); // State to store the ID of the connected user
   const chatEndRef = useRef(null);
  
   // This effect runs when the component mounts, setting up the socket connection
@@ -19,14 +19,13 @@ export default function MsgRoom() {
         token: localStorage.getItem("token"), // Or pass cookie if using httpOnly
       },
     });
-
     const handleMessage = ({ text, sender }) => {
       console.log(`Received ${text} from ${sender}`); // Log the message and sender ID
       setMessages((prev) => [...prev, { text: text, sender: sender}]);
     };
     const handleHistory = ({history, sender}) => {
       setMessages((prevMessages) => [...prevMessages, ...history]);  // Update state with the message history
-      setId(sender); // Store the ID of the connected user
+      setUsername(sender); // Store the ID of the connected user
       console.log(`Received ${history} and ID: ${sender}`); // Log the message and sender ID
     };
 
@@ -46,7 +45,7 @@ export default function MsgRoom() {
     if (input === "") {
       return; // Don't send empty messages
     }
-    socket.current.emit("sendMessage", { text: input.trim(), sender: id});
+    socket.current.emit("sendMessage", { text: input.trim(), sender: username});
     setInput("");
   };
   // This function scrolls to the bottom of the chat window
@@ -64,15 +63,21 @@ export default function MsgRoom() {
   }, [messages]);
 
   return (
+    // Justify makes each box align at start or end of row, depending on the sender
+    // Flex makes the boxes stack vertically
+    // Overflow-y-auto makes the chat scrollable when it overflows
+    // Space-y-2 adds space (margin) between the messages
+    // p-4 adds padding to the chat window
+    // mx-auto centers the chat window horizontally
+    // flex-1 makes the chat window take up all available space
     <div className="flex flex-col h-[1000px] w-[1000px] mx-auto border border-gray-300 rounded-lg shadow-lg">
-      {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {messages.filter((obj) => obj.sender).map((obj, index) => (
-          <div key={index} className={`flex ${obj.sender === id ? "justify-end" : "justify-start"}`}>
-            <div className="text-xs font-bold text-gray-600">
-              {obj.sender.substring(0,5)}
+          {messages.filter((obj) => obj.sender).map((obj, index) => (
+          <div key={index} className={`flex flex-col w-full ${obj.sender === username ? "items-end" : "items-start"}`}>
+            <div className="text-lg font-bold text-gray-600">
+              {obj.sender}
             </div>
-            <div className={`p-2 rounded-md ${obj.sender === id ? "bg-blue-500 text-white" : "bg-gray-300 text-black"}`}>
+            <div className={`p-2 rounded-md ${obj.sender === username ? "bg-blue-500 text-white" : "bg-gray-300 text-black"}`}>
               {obj.text}
             </div>
           </div>
@@ -80,7 +85,6 @@ export default function MsgRoom() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input Box */}
       <div className="flex border-t border-gray-300 p-2">
         <input
           type="text"

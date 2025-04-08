@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_URL } from "../main"; 
+import { API_URL } from "./constants.js"; // Import the API_URL from constants.js
 
 export default function LoginPage() {
     // State to hold the form values

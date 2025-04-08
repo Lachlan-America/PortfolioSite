@@ -13,16 +13,23 @@ export async function createUser(req, res) {
     const { username, password } = req.body;
     ChatServer.debug(`Creating user: '${username}'...`);
 
-    // Check if the username is already taken
-    if (users.has(username)) {
-        ChatServer.debug(`User '${username}' already exists`);
-        return res.status(400).json({ message: 'User already exists' });
-    }
-    // Make new object of the User model with the username and password
-    const user = new User({ username, password });
-
-    // Save the user to the database
     try {
+        // Find the user in the database model
+        const users = await User.findOne({ username });
+        
+        // Check if the username is already taken
+        if (users != null) {
+            ChatServer.debug(`User '${username}' already exists`);
+            return res.status(400).json({ message: 'User already exists' });
+        }
+        if (username.length > 16) {
+            ChatServer.debug(`Username '${username}' is too long (16 characters max)`);
+            return res.status(400).json({ message: 'Username must be less than 16 characters long!' });
+        }
+        // Make new object of the User model with the username and password
+        const user = new User({ username, password });
+
+        // Save the user to the database
         await user.save();
         ChatServer.debug(`User '${username}' created successfully`);
         res.status(201).json({message: 'User created successfully'});
@@ -62,9 +69,11 @@ export async function loginUser(req, res) {
         }
         // If the username and password match, proceed with login and send 
         ChatServer.debug(`User '${username}' logged in successfully`);
+        ChatServer.debug(ChatServer.SECRET_KEY);
         const token = jwt.sign({ userId: user._id, username: user.username }, ChatServer.SECRET_KEY, { expiresIn: '1h' });
         res.status(200).json({ token });
 
+        // No duplicate userames are allowed
         ChatServer.USERS.set(username, token);
 
     } catch (err) {

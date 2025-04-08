@@ -1,10 +1,8 @@
 
 class User {
-    constructor(id, username, wins) {
-        this.id = id;
+    constructor(token, username) {
+        this.token = token;
         this.username = username;
-
-        this.wins = wins;
     }
 
     getId() {
@@ -27,6 +25,16 @@ class User {
     }
     sendMessage(msg) {
         // TODO: send message to user
+    }
+    state() {
+        return {
+            id: this.id,
+            username: this.username,
+            wins: this.wins,
+        };
+    }
+    setId(id) {
+        this.id = id;
     }
 }
 

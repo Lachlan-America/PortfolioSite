@@ -7,10 +7,12 @@ import mongoose from "mongoose"; // Import mongoose for MongoDB connection
 
 import User from "./models/User.js"; 
 import { createUser, checkUsername, loginUser } from "./auth_controller.js";
+import { debug } from "console";
 
 export default class ChatServer {
-    SECRET_KEY = '3nh213bh1ygxsa23';
-    USERS = new Map(); 
+    static SECRET_KEY = 'secret';
+    // Currently username to JWT
+    static USERS = new Map(); 
 
     constructor() {
         this.clients = [];
@@ -68,8 +70,10 @@ export default class ChatServer {
           
             try {
                 const payload = jwt.verify(token, ChatServer.SECRET_KEY);
-                socket.user = payload; 
+                socket.user = payload.username; 
+                ChatServer.debug(`'${socket.user}' connected with token: ${token}`);
                 next();
+
             } catch (err) {
                 ChatServer.debug(`'${socket.id}' has a invalid token!`);
                 return next(new Error('Invalid token'));
@@ -103,8 +107,8 @@ export default class ChatServer {
     */
     addClient(socket) {
         this.clients.push(socket);
-        ChatServer.debug(`User '${socket.id}' connected`);                                              
-        socket.emit("messageHistory", { history: this.messageHistory, sender: socket.id.toString() }); 
+        ChatServer.debug(`User '${socket.user}' connected`);                                              
+        socket.emit("messageHistory", { history: this.messageHistory, sender: socket.user.toString() }); 
     }
 
     /**
@@ -114,9 +118,9 @@ export default class ChatServer {
     * @param {object} obj - The message object containing the text and sender information.
     */
     sendMessage(socket, obj) {
-        ChatServer.debug(`${socket.id}: ${obj.text}`);
-        this.messageHistory.push({text: obj.text, sender: socket.id.toString()});
-        this.io.emit("receiveMessage", { text: obj.text, sender: socket.id.toString() });
+        ChatServer.debug(`${socket.user}: ${obj.text}`);
+        this.messageHistory.push({text: obj.text, sender: socket.user.toString()});
+        this.io.emit("receiveMessage", { text: obj.text, sender: socket.user.toString() });
     }
 
     /**
@@ -127,7 +131,7 @@ export default class ChatServer {
     removeClient(socket) {
         // Remove the client from the list of connected clients
         this.clients = this.clients.filter(c => c !== socket);
-        ChatServer.debug(`User '${socket.id}' disconnected`);
+        ChatServer.debug(`User '${socket.user}' disconnected`);
     }
 
     /**
