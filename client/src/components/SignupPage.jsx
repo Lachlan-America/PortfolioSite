@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../main"; // Import the API URL
 
 export default function SignupPage() {
     // State to hold the form values
@@ -10,13 +11,63 @@ export default function SignupPage() {
     const [error, setError] = useState("");
     const navigate = useNavigate(); // Initialize navigate function
 
-    // Function to handle form submission
+    const debounce = (func, delay) => {
+        let timeoutId;
+        // args is the array of arguments passed to func
+        return function (...args) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(this, args), delay);
+        };
+    };
+    
+    // This will check if the username is available after a 500ms delay
+    const checkUsernameAvailability = useCallback(
+        debounce(async (usernameToCheck) => {
+            if (usernameToCheck.length > 0) {
+                const res = await fetch(`${API_URL}/api/check-username`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: usernameToCheck }),
+                });
+
+                const data = await res.json();
+                setIsUsernameAvailable(res.status === 200);
+                setError(res.status === 200 ? "" : data.message);
+            }
+        }, 500),
+        [] // ← empty dependency array means this is only created once
+    );
+    
+    // Run whenever the username changes (runs on render)
+    useEffect(() => {
+        checkUsernameAvailability(username);
+    }, [username, checkUsernameAvailability]);
+    
+    // Once the form is submitted, this function will be called
     const handleSubmit = async (e) => {
-        // Stops the page from refreshing
         e.preventDefault();
 
-        navigate('/login');
+        if (isUsernameAvailable && password === repeatPassword) {
+            // Submit the form data if the username is available
+            const res = await fetch(`${API_URL}/api/create-user`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            });
+            // The response object
+            const data = await res.json();
+
+            if (res.status === 201) {
+                alert('Profile created successfully!');
+                navigate('/login');
+            } else {
+                alert('Profile creation failed.');
+            }
+        } else {
+            alert('Please choose a different username.');
+        }
     };
+    
 
     return (
         <div>
@@ -32,6 +83,7 @@ export default function SignupPage() {
                         required
                     />
                 </div>
+                <p className="">{error}</p>
                 <div>
                     <input className="border border-gray-300 rounded-lg shadow-lg mb-2 w-lg p-10px"
                         type="password"

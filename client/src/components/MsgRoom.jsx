@@ -1,45 +1,52 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
-import { io } from "socket.io-client"; // Import socket.io client
+import { io } from "socket.io-client";
+import { API_URL } from "../main"; 
 
-export default function ChatRoom() {
-  const socket = io("http://14.201.214.251:5000"); // Connect to backend
+
+export default function MsgRoom() {
+  const socket = useRef(null);
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [id, setId] = useState(null); // State to store the ID of the connected user
   const chatEndRef = useRef(null);
-
+ 
   // This effect runs when the component mounts, setting up the socket connection
   // Need to remove the listener when the component unmounts to avoid memory leaks
   useEffect(() => {
+    socket.current = io(API_URL, {
+      auth: {
+        token: localStorage.getItem("token"), // Or pass cookie if using httpOnly
+      },
+    });
+
     const handleMessage = ({ text, sender }) => {
       console.log(`Received ${text} from ${sender}`); // Log the message and sender ID
       setMessages((prev) => [...prev, { text: text, sender: sender}]);
     };
     const handleHistory = ({history, sender}) => {
-      // for (let i = 0; i < history.length; i++) {
-      //   console.log(history[i].text + history[i].sender); // Assign the sender ID to each message
-      // }
       setMessages((prevMessages) => [...prevMessages, ...history]);  // Update state with the message history
       setId(sender); // Store the ID of the connected user
       console.log(`Received ${history} and ID: ${sender}`); // Log the message and sender ID
     };
 
-    socket.on("messageHistory", handleHistory); 
-    socket.on("receiveMessage", handleMessage);
+    socket.current.on("messageHistory", handleHistory); 
+    socket.current.on("receiveMessage", handleMessage);
 
     // The return is a cleanup function that runs when the component unmounts
     return () => {
-      socket.off("messageHistory", handleHistory); 
-      socket.off("receiveMessage", handleMessage);
+      socket.current.disconnect();
+      socket.current.off("messageHistory", handleHistory); 
+      socket.current.off("receiveMessage", handleMessage);
     };
-  }, [messages]);
+  }, []);
 
   // This function sends a message through the 'sendMessage' event, and the input is reset
   const sendMessage = () => {
     if (input === "") {
       return; // Don't send empty messages
     }
-    socket.emit("sendMessage", { text: input.trim(), sender: id});
+    socket.current.emit("sendMessage", { text: input.trim(), sender: id});
     setInput("");
   };
   // This function scrolls to the bottom of the chat window
@@ -53,7 +60,7 @@ export default function ChatRoom() {
 
   // Use useLayoutEffect to scroll immediately after rendering
   useLayoutEffect(() => {
-    scrollToBottom(); // Scroll to the bottom after a new message is added
+    scrollToBottom();
   }, [messages]);
 
   return (

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../main"; 
 
 export default function LoginPage() {
     // State to hold the form values
@@ -14,23 +15,28 @@ export default function LoginPage() {
         e.preventDefault();
 
         // Transmits form data as JSON to the server
-        const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        const res = await fetch(`${API_URL}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
         });
 
         const data = await res.json();
 
-        if (data.token) {
-            localStorage.setItem('token', data.token);
+        if (res.status === 200) {
+            //localStorage.setItem('token', data.token);
             alert('Login successful!');
+
+            // Store the token in local storage (if needed)
+            localStorage.setItem('token', data.token);
+
             // Navigate to chat page after successful login
             navigate('/chat');
         } else {
             setError('Login failed.');
         }
     };
+    
     // Handle navigation to signup page
     const goToSignup = () => {
         navigate('/signup');
