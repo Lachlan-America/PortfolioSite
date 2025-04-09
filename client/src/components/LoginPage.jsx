@@ -33,7 +33,7 @@ export default function LoginPage() {
             // Navigate to chat page after successful login
             navigate('/chat');
         } else {
-            setError('Login failed.');
+            setError(data.message);
         }
     };
     
@@ -45,6 +45,7 @@ export default function LoginPage() {
     return (
         <div>
             <h1>Login</h1>
+            {error && <p className="w-full bg-red-500">{error}</p>}
             <form onSubmit={handleSubmit} id="loginForm">
                 <div>
                     <input className="border border-gray-300 rounded-lg shadow-lg mt-8 mb-2 w-lg p-10px"
@@ -68,7 +69,6 @@ export default function LoginPage() {
                 </div>
                 <button type="submit" className="mb-3">Login</button>
             </form>
-            {error && <p>{error}</p>}
             <button onClick={goToSignup}>Don't have an account? Sign Up</button>
         </div>
     );

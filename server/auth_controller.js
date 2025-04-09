@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from "./models/User.js"; 
 import ChatServer from "./server.js";
+import bcrypt from 'bcryptjs';
 
 
 /**
@@ -14,20 +15,27 @@ export async function createUser(req, res) {
     ChatServer.debug(`Creating user: '${username}'...`);
 
     try {
+        // Check if the password meets the criteria
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,16}$/;
+        if (!passwordRegex.test(password)) {
+            ChatServer.debug(`User's password: '${password}' exceeds password criteria`);
+            return res.status(400).json({ message: 'Password must be 8-16 characters and include at least one uppercase letter and one number.' });
+        }
         // Find the user in the database model
         const users = await User.findOne({ username });
         
         // Check if the username is already taken
         if (users != null) {
             ChatServer.debug(`User '${username}' already exists`);
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ message: 'User already exists.' });
         }
         if (username.length > 16) {
             ChatServer.debug(`Username '${username}' is too long (16 characters max)`);
             return res.status(400).json({ message: 'Username must be less than 16 characters long!' });
         }
         // Make new object of the User model with the username and password
-        const user = new User({ username, password });
+        const hashedPassword = await bcrypt.hash(password, 10); // 10 = salt rounds
+        const user = new User({ username, password: hashedPassword });
 
         // Save the user to the database
         await user.save();
@@ -62,15 +70,48 @@ export async function loginUser(req, res) {
             ChatServer.debug(`User '${username}' not found`);
             return res.status(400).json({ message: 'Invalid username or password' });
         }
-        // TODO: Use bcrypt to hash the password and compare it with the stored hash
-        if (user.password !== password) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
             ChatServer.debug(`Invalid password for user '${username}'`);
             return res.status(400).json({ message: 'Invalid username or password' });
         }
         // If the username and password match, proceed with login and send 
         ChatServer.debug(`User '${username}' logged in successfully`);
         ChatServer.debug(ChatServer.SECRET_KEY);
-        const token = jwt.sign({ userId: user._id, username: user.username }, ChatServer.SECRET_KEY, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user._id, username: user.username }, ChatServer.SECRET_KEY, { expiresIn: '1m' });
+        res.status(200).json({ token });
+
+        // No duplicate userames are allowed
+        ChatServer.USERS.set(username, token);
+
+    } catch (err) {
+        ChatServer.debug(`Error logging the user in: ${err.message}`);
+        res.status(500).json({ message: err.message });
+    }
+}
+
+export async function uploadUserPhoto(req, res) {
+    const { username, password } = req.body;
+    ChatServer.debug(`Logging in user: '${username}'...`);
+
+    try {
+        // Find the user in the database model
+        const user = await User.findOne({ username });
+    
+        // If no user found, return an error
+        if (!user) {
+            ChatServer.debug(`User '${username}' not found`);
+            return res.status(400).json({ message: 'Invalid username or password' });
+        }
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            ChatServer.debug(`Invalid password for user '${username}'`);
+            return res.status(400).json({ message: 'Invalid username or password' });
+        }
+        // If the username and password match, proceed with login and send 
+        ChatServer.debug(`User '${username}' logged in successfully`);
+        ChatServer.debug(ChatServer.SECRET_KEY);
+        const token = jwt.sign({ userId: user._id, username: user.username }, ChatServer.SECRET_KEY, { expiresIn: '1m' });
         res.status(200).json({ token });
 
         // No duplicate userames are allowed

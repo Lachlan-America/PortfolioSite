@@ -63,13 +63,6 @@ export default function MsgRoom() {
   }, [messages]);
 
   return (
-    // Justify makes each box align at start or end of row, depending on the sender
-    // Flex makes the boxes stack vertically
-    // Overflow-y-auto makes the chat scrollable when it overflows
-    // Space-y-2 adds space (margin) between the messages
-    // p-4 adds padding to the chat window
-    // mx-auto centers the chat window horizontally
-    // flex-1 makes the chat window take up all available space
     <div className="flex flex-col h-[1000px] w-[1000px] mx-auto border border-gray-300 rounded-lg shadow-lg">
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {messages.filter((obj) => obj.sender).map((obj, index) => (
@@ -77,7 +70,7 @@ export default function MsgRoom() {
             <div className="text-lg font-bold text-gray-600">
               {obj.sender}
             </div>
-            <div className={`p-2 rounded-md ${obj.sender === username ? "bg-blue-500 text-white" : "bg-gray-300 text-black"}`}>
+            <div className={`p-2 max-w-2/3 rounded-md ${obj.sender === username ? "bg-blue-500 text-white" : "bg-gray-300 text-black"}`}>
               {obj.text}
             </div>
           </div>

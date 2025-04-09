@@ -46,8 +46,12 @@ export default function SignupPage() {
     // Once the form is submitted, this function will be called
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (isUsernameAvailable && password === repeatPassword) {
+        
+        if (password !== repeatPassword) {
+            setError("Passwords do not match!");
+            return;
+        }
+        if (isUsernameAvailable) {
             // Submit the form data if the username is available
             const res = await fetch(`${API_URL}/api/create-user`, {
                 method: 'POST',
@@ -58,20 +62,20 @@ export default function SignupPage() {
             const data = await res.json();
 
             if (res.status === 201) {
-                alert('Profile created successfully!');
                 navigate('/login');
             } else {
-                alert('Profile creation failed.');
+                setError(data.message);
             }
         } else {
-            alert('Please choose a different username.');
+            setError('Please choose a different username.');
         }
     };
     
 
     return (
         <div>
-            <h1>Sign Up</h1>
+            <h1  className="mb-5">Sign Up</h1>
+            {error && <p className="w-full bg-red-500">{error}</p>}
             <form onSubmit={handleSubmit} id="signupForm">
                 <div>
                     <input className="border border-gray-300 rounded-lg shadow-lg mt-8 mb-2 w-lg p-10px"
@@ -83,7 +87,6 @@ export default function SignupPage() {
                         required
                     />
                 </div>
-                <p className="">{error}</p>
                 <div>
                     <input className="border border-gray-300 rounded-lg shadow-lg mb-2 w-lg p-10px"
                         type="password"

@@ -3,10 +3,10 @@ import http from "http";
 import express from "express";
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
-import mongoose from "mongoose"; // Import mongoose for MongoDB connection
+import mongoose from "mongoose";
 
 import User from "./models/User.js"; 
-import { createUser, checkUsername, loginUser } from "./auth_controller.js";
+import { createUser, checkUsername, loginUser, uploadUserPhoto } from "./auth_controller.js";
 import { debug } from "console";
 
 export default class ChatServer {
@@ -49,6 +49,7 @@ export default class ChatServer {
     */
     start(port) {
         this.http_server.listen(port, () => ChatServer.debug(`Server running on http://localhost:${port}`));
+        
         // Middleware to authenticate the socket connection using JWT
         this.authenticateClient()
         this.handleClient();
@@ -57,8 +58,12 @@ export default class ChatServer {
         this.app.post('/api/check-username', checkUsername); 
         this.app.post('/api/create-user', createUser); 
         this.app.post('/api/login', loginUser);
+        this.app.post('/api/upload', uploadUserPhoto);
     }
 
+    /**
+    * Middleware to authenticate the socket connection using JWT.
+    */
     authenticateClient() {     
         this.io.use((socket, next) => {
             const token = socket.handshake.auth.token;
